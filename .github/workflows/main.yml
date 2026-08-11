@@ -1,24 +1,31 @@
 # =============================================================
-# SAKUTOPUP FREE RDP - STEALTH COMMUNITY VERSION (3 JAM)
+# SAKUTOPUP FREE RDP - AUTO REPEAT VERSION (3 JAM)
 # =============================================================
 # INSTRUKSI PENGGUNAAN:
-# 1. Buat Repo baru, simpan file ini di .github/workflows/rdp.yml
-# 2. Ambil AUTH KEY di Tailscale.com.
-# 3. Masukkan ke Settings > Secrets > Actions (Nama: TS_KEY).
-# 4. Jalankan via tab ACTIONS.
+# 1. Simpan file ini di .github/workflows/rdp.yml pada repositori Anda.
+# 2. Dapatkan AUTH KEY dari Tailscale (Pastikan tipe: Reusable).
+# 3. Masukkan ke Settings > Secrets and variables > Actions:
+#    - TS_KEY     : Auth Key Tailscale (Reusable)
+#    - PAT_TOKEN  : Personal Access Token GitHub (Scope: repo/workflow)
+# 4. Jalankan manual 1x via tab ACTIONS, selanjutnya akan mengulang otomatis.
 # =============================================================
 
 name: SAKUTOPUP-FREE-3H
+
 on:
   workflow_dispatch:
+  schedule:
+    # Otomatis berjalan ulang setiap 3 jam
+    - cron: '0 */3 * * *'
 
 jobs:
   deployment:
     runs-on: windows-latest
-    timeout-minutes: 180 # Dikunci ke 3 Jam agar akun lebih awet
+    timeout-minutes: 180 # Dikunci tepat di 3 Jam (180 Menit)
 
     steps:
       - name: 1. System Preparation
+        shell: powershell
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0 -Force
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 0 -Force
@@ -26,44 +33,48 @@ jobs:
           Restart-Service -Name TermService -Force
 
       - name: 2. Identity Generation (Random)
+        shell: powershell
         run: |
           $id = Get-Random -Minimum 1000 -Maximum 9999
           $u = "UserSAKU$id"
           
-          # Password Aman & Stabil (Besar, Kecil, Angka)
           $sets = @("ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnpqrstuvwxyz", "23456789")
           $p = ""
           foreach ($s in $sets) { $p += $s[(Get-Random -Maximum $s.Length)] }
           $all = -join $sets
-          for ($i=1; $i -le 11; $i++) { $p += $all[(Get-Random -Maximum $all.Length)] }
+          for ($i = 1; $i -le 11; $i++) { $p += $all[(Get-Random -Maximum $all.Length)] }
           
-          echo "SAKU_USER=$u" >> $env:GITHUB_ENV
-          echo "SAKU_PASS=$p" >> $env:GITHUB_ENV
+          "SAKU_USER=$u" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "SAKU_PASS=$p" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           
           net user $u $p /add /y
           net localgroup Administrators $u /add
 
       - name: 3. Deploy Branding
+        shell: powershell
         run: |
           $Desktop = "C:\Users\Public\Desktop"
+          if (-not (Test-Path $Desktop)) { New-Item -Path $Desktop -ItemType Directory -Force }
           $Shell = New-Object -ComObject WScript.Shell
           $Shortcut = $Shell.CreateShortcut("$Desktop\SAKUTOPUP-WEB.url")
           $Shortcut.TargetPath = "https://sakutopup.gamesquad.id/"
           $Shortcut.Save()
 
       - name: 4. Secure Tunneling
+        shell: powershell
         run: |
           $msi = "$env:TEMP\ts.msi"
           Invoke-WebRequest -Uri "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi" -OutFile $msi
           Start-Process msiexec.exe -ArgumentList "/i", "`"$msi`"", "/quiet", "/norestart" -Wait
           
-          # Menggunakan Secret Key masing-masing user
-          & "$env:ProgramFiles\Tailscale\tailscale.exe" up --authkey=${{ secrets.TS_KEY }} --hostname=SAKU-FREE-3H
+          $tsPath = "$env:ProgramFiles\Tailscale\tailscale.exe"
+          & $tsPath up --authkey=${{ secrets.TS_KEY }} --hostname=SAKU-FREE-3H
           
-          $ip = & "$env:ProgramFiles\Tailscale\tailscale.exe" ip -4
-          echo "SAKU_IP=$ip" >> $env:GITHUB_ENV
+          $ip = & $tsPath ip -4
+          "SAKU_IP=$ip" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
-      - name: 5. Access Information
+      - name: 5. Access Information & Keep Alive (3 Jam)
+        shell: powershell
         run: |
           Write-Host "`n==============================================="
           Write-Host " [ SAKUTOPUP FREE RDP - ONLINE ]"
@@ -71,13 +82,35 @@ jobs:
           Write-Host " IP ADDRESS : $env:SAKU_IP"
           Write-Host " USERNAME   : $env:SAKU_USER"
           Write-Host " PASSWORD   : $env:SAKU_PASS"
-          Write-Host " DURASI     : 3 JAM (STEALTH)"
+          Write-Host " DURASI     : 3 JAM"
           Write-Host "==============================================="
           Write-Host " Website: sakutopup.gamesquad.id"
           Write-Host "==============================================="
           
           $start = Get-Date
-          while ((Get-Date) -lt $start.AddMinutes(175)) {
-              Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Station Online..."
+          # Berjalan selama 170 menit (2 Jam 50 Menit) sebelum me-restart RDP baru
+          $endTime = $start.AddMinutes(170)
+          
+          while ((Get-Date) -lt $endTime) {
+              $remaining = [math]::Round(($endTime - (Get-Date)).TotalMinutes)
+              Write-Host "[$(Get-Date -Format 'HH:mm:ss')] Station Active. Sisa waktu sesi ini: $remaining menit"
               Start-Sleep -Seconds 300
+          }
+
+      - name: 6. Auto Trigger Next RDP
+        if: always()
+        shell: powershell
+        run: |
+          Write-Host "Memicu workflow baru agar RDP langsung menyala kembali..."
+          $headers = @{
+              "Authorization" = "token ${{ secrets.PAT_TOKEN }}"
+              "Accept"        = "application/vnd.github.v3+json"
+          }
+          $body = @{ ref = "main" } | ConvertTo-Json
+          
+          try {
+              Invoke-RestMethod -Uri "https://api.github.com/repos/${{ github.repository }}/actions/workflows/rdp.yml/dispatches" -Method Post -Headers $headers -Body $body
+              Write-Host "Workflow RDP baru berhasil dipicu!"
+          } catch {
+              Write-Host "Gagal memicu otomatis via API. Mengandalkan jadwal Cron."
           }
