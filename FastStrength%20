@@ -1,0 +1,190 @@
+--[[ Fast Farm Syazwi l PRIVATE | By MLYC_SyazwiOnTop ]]
+local P=game.Players.LocalPlayer
+local RS=game:GetService("ReplicatedStorage")
+local VU=game:GetService("VirtualUser")
+local VIM=game:GetService("VirtualInputManager")
+P.Idled:Connect(function()pcall(function()VU:CaptureController()VU:ClickButton2(Vector2.new())end)end)
+local L=loadstring(game:HttpGet("https://raw.githubusercontent.com/0o0o0o0o0o0o0o0o0o0o0o0o/0o/refs/heads/main/CRUSHER.lua",true))()
+local W=L:AddWindow("Fast Farm Syazwi l PRIVATE",{main_color=Color3.fromRGB(138,0,0),min_size=Vector2.new(600,600),can_resize=false})
+local ME=P:WaitForChild("muscleEvent")
+local LS=P:WaitForChild("leaderstats")
+local RB=LS:WaitForChild("Rebirths")
+local ST=LS:WaitForChild("Strength")
+local DU=P:WaitForChild("Durability")
+for _,n in ipairs({"strengthFrame","durabilityFrame","agilityFrame"})do local f=RS:FindFirstChild(n)if f and f:IsA("GuiObject")then f.Visible=false end end
+local function F(n)if not n or n==0 then return "0" end if n>=1e18 then return string.format("%.2fQi",n/1e18)elseif n>=1e15 then return string.format("%.2fQa",n/1e15)elseif n>=1e12 then return string.format("%.2fT",n/1e12)elseif n>=1e9 then return string.format("%.2fB",n/1e9)elseif n>=1e6 then return string.format("%.2fM",n/1e6)elseif n>=1e3 then return string.format("%.2fK",n/1e3)else return string.format("%.0f",n)end end
+
+-- HEALTH
+local lastDur={}
+local function gD(plr)local ok,v=pcall(function()local ls=plr:FindFirstChild("leaderstats")if ls then local d=ls:FindFirstChild("Durability")if d then return d.Value end end return 0 end)return ok and v or 0 end
+local function cHP(plr)
+local c=plr.Character if not c then return end
+local h=c:FindFirstChild("Head")if not h then return end
+local o=h:FindFirstChild("SyazwiHP")if o then o:Destroy()end
+local bb=Instance.new("BillboardGui")bb.Name="SyazwiHP"bb.Size=UDim2.new(0,200,0,40)bb.StudsOffset=Vector3.new(0,2.8,0)bb.AlwaysOnTop=true bb.Parent=h
+local n=Instance.new("TextLabel")n.Name="Name"n.Size=UDim2.new(1,0,0,16)n.BackgroundTransparency=1 n.Text=plr.DisplayName n.TextColor3=(plr==P)and Color3.fromRGB(80,200,255)or Color3.fromRGB(255,255,255)n.Font=Enum.Font.GothamBold n.TextSize=13 n.TextStrokeTransparency=0.2 n.TextStrokeColor3=Color3.fromRGB(0,0,0)n.Parent=bb
+local ht=Instance.new("TextLabel")ht.Name="HPText"ht.Size=UDim2.new(1,0,0,18)ht.Position=UDim2.new(0,0,1,-18)ht.BackgroundTransparency=1 ht.Text="🛡 0"ht.TextColor3=Color3.fromRGB(80,220,120)ht.Font=Enum.Font.GothamBold ht.TextSize=15 ht.TextStrokeTransparency=0.2 ht.TextStrokeColor3=Color3.fromRGB(0,0,0)ht.Parent=bb end
+local function uHP(plr)
+local c=plr.Character if not c then return end
+local h=c:FindFirstChild("Head")if not h then return end
+local bb=h:FindFirstChild("SyazwiHP")if not bb then cHP(plr)return end
+local ht=bb:FindFirstChild("HPText")if not ht then return end
+local d=gD(plr)ht.Text="🛡 "..F(d)
+local p=lastDur[plr.UserId]
+if p and d<p then ht.TextColor3=Color3.fromRGB(255,80,80)ht.Text="🛡 "..F(d).." (-"..F(p-d)..")"task.delay(0.8,function()if ht and ht.Parent then ht.TextColor3=Color3.fromRGB(80,220,120)end end)else ht.TextColor3=Color3.fromRGB(80,220,120)end
+lastDur[plr.UserId]=d end
+local function sP(plr)plr.CharacterAdded:Connect(function()task.wait(1)pcall(cHP,plr)end)if plr.Character then task.wait(0.5)pcall(cHP,plr)end end
+for _,plr in ipairs(game.Players:GetPlayers())do sP(plr)end
+game.Players.PlayerAdded:Connect(sP)
+game.Players.PlayerRemoving:Connect(function(plr)lastDur[plr.UserId]=nil end)
+task.spawn(function()while true do for _,plr in ipairs(game.Players:GetPlayers())do pcall(uHP,plr)end task.wait(0.3)end end)
+
+-- PETS
+local function pS(pt)local s=pt:FindFirstChild("strength")if s and s:IsA("ValueBase")then return s.Value end return 0 end
+local function pB(pt)local b=pt:FindFirstChild("repTimeBoostPercent")if b and b:IsA("ValueBase")then return b.Value end return 0 end
+local FARM={"Omega Overlord","Mythic Boss Pet","Epic Boss Pet","Rare Boss Pet"}
+local REB={"Titanium Hydra"}
+local EF={["Rare Boss Pet"]=3}
+local lastKey=nil
+local function equip(list,force,mode)
+mode=mode or "farm" local key=table.concat(list,"|").."_"..mode
+if not force and lastKey==key then return end
+for _,f in pairs(P.petsFolder:GetChildren())do if f:IsA("Folder")then for _,pt in pairs(f:GetChildren())do RS.rEvents.equipPetEvent:FireServer("unequipPet",pt)end end end
+task.wait(0.25)
+local cd={}
+for _,f in pairs(P.petsFolder:GetChildren())do if f:IsA("Folder")then for _,pt in pairs(f:GetChildren())do for _,nm in ipairs(list)do if pt.Name==nm then local mt=EF[nm]local t=pt:GetAttribute("EnchantTier")or 0 if(not mt)or(t>=mt)then local sc=(mode=="farm")and(pB(pt)*1e9+pS(pt))or pS(pt)table.insert(cd,{pet=pt,name=nm,sc=sc,lock=pt:GetAttribute("Locked")==true})end break end end end end end
+local eq={}local used={}
+for _,nm in ipairs(list)do for _,c in ipairs(cd)do if #eq>=6 then break end if c.name==nm and not used[c] and not c.lock then RS.rEvents.equipPetEvent:FireServer("equipPet",c.pet)used[c]=true table.insert(eq,c.name)task.wait(0.08)end end if #eq>=6 then break end end
+if #eq<6 then local r={}for _,c in ipairs(cd)do if not used[c] and not c.lock then table.insert(r,c)end end table.sort(r,function(a,b)return a.sc>b.sc end)for _,c in ipairs(r)do if #eq>=6 then break end RS.rEvents.equipPetEvent:FireServer("equipPet",c.pet)used[c]=true table.insert(eq,c.name)task.wait(0.08)end end
+if #eq>0 then print("[PET "..mode.."] "..table.concat(eq,", "))lastKey=key end end
+
+-- HIDE PET
+local hidePetOn=false
+local function hidePets()for _,plr in ipairs(game.Players:GetPlayers())do local c=plr.Character if c then for _,o in ipairs(c:GetChildren())do if o:IsA("Folder")then for _,pt in ipairs(o:GetDescendants())do if pt:IsA("BasePart")then pt.LocalTransparencyModifier=hidePetOn and 1 or 0 end end end end end end end
+task.spawn(function()while true do if hidePetOn then pcall(hidePets)end task.wait(1.5)end end)
+
+-- MAIN
+local MT=W:AddTab("          Main          ")
+MT:AddLabel("Settings").TextSize=30
+MT:AddTextBox("Speed",function(v)local n=tonumber(v)if n and P.Character and P.Character:FindFirstChild("Humanoid")then P.Character.Humanoid.WalkSpeed=n end end)
+MT:AddTextBox("Size",function(v)local n=tonumber(v)if n then RS.rEvents.changeSpeedSizeRemote:InvokeServer("changeSize",n)end end)
+MT:AddLabel("Essentials:").TextSize=30
+for _,p in pairs(game:GetDescendants())do if p.Name=="RobloxForwardPortals"then p:Destroy()end end
+game.DescendantAdded:Connect(function(d)if d.Name=="RobloxForwardPortals"then d:Destroy()end end)
+MT:AddButton("Load Infinite Yield",function()pcall(function()loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()end)end)
+MT:AddButton("Anti Lag",function()pcall(function()local pg=P:WaitForChild("PlayerGui")local li=game:GetService("Lighting")for _,g in pairs(pg:GetChildren())do if g:IsA("ScreenGui")then g:Destroy()end end local ds=Instance.new("Sky")ds.Name="DarkSky"for _,pr in ipairs({"SkyboxBk","SkyboxDn","SkyboxFt","SkyboxLf","SkyboxRt","SkyboxUp"})do ds[pr]="rbxassetid://0"end ds.Parent=li li.Brightness=0 li.ClockTime=0 li.OutdoorAmbient=Color3.new(0,0,0)li.Ambient=Color3.new(0,0,0)end)end)
+MT:AddSwitch("Anti Fling",function(b)if b then local c=game.Workspace:FindFirstChild(P.Name)if c then local r=c:FindFirstChild("HumanoidRootPart")if r then local bv=Instance.new("BodyVelocity")bv.MaxForce=Vector3.new(100000,0,100000)bv.Velocity=Vector3.new(0,0,0)bv.P=1250 bv.Parent=r end end else local c=game.Workspace:FindFirstChild(P.Name)if c then local r=c:FindFirstChild("HumanoidRootPart")if r then local e=r:FindFirstChild("BodyVelocity")if e and e.MaxForce==Vector3.new(100000,0,100000)then e:Destroy()end end end end end):Set(true)
+MT:AddSwitch("Lock Position",function(v)if v then local cp=P.Character.HumanoidRootPart.CFrame getgenv().pl=game:GetService("RunService").Heartbeat:Connect(function()if P.Character:FindFirstChild("HumanoidRootPart")then P.Character.HumanoidRootPart.CFrame=cp end end)else if getgenv().pl then getgenv().pl:Disconnect()getgenv().pl=nil end end end):Set(false)
+MT:AddSwitch("Hide Pet",function(s)hidePetOn=s if s then pcall(hidePets)end end):Set(false)
+MT:AddButton("Rejoin",function()game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId,game.JobId,P)end)
+
+-- KILLING
+local KT=W:AddTab("Killing")
+local tgt=nil kOn=false sOn=false aKAll=false aKBad=false aKGood=false
+local function gN()local l={}for _,plr in ipairs(game.Players:GetPlayers())do if plr~=P then table.insert(l,plr.Name)end end table.sort(l)return l end
+local totL=KT:AddLabel("Total Players: "..(#gN()+1))totL.TextSize=16
+local tgtL=KT:AddLabel("Target: (none)")tgtL.TextSize=15 tgtL.TextColor3=Color3.fromRGB(255,200,100)
+KT:AddTextBox("Target Name",function(v)if v and v~=""and game.Players:FindFirstChild(v)then tgt=v tgtL.Text="Target: "..v end end,{placeholder="Type name"})
+local ini=gN()if #ini==0 then ini={"(no players)"}end
+KT:AddDropdown("Target",ini,function(v)if v and v~="(no players)"then tgt=v tgtL.Text="Target: "..v end end)
+KT:AddButton("Refresh (Console)",function()local n=gN()totL.Text="Total Players: "..(#n+1)print("== PLAYER LIST ==")for _,x in ipairs(n)do print(" - "..x)end print("====")end)
+local function gK(plr)local ok,v=pcall(function()local ls=plr:FindFirstChild("leaderstats")if ls then local k=ls:FindFirstChild("Karma")if k then return k.Value end end return nil end)return ok and v or nil end
+local function killP(plr)
+if not plr or not plr.Character or plr==P then return end
+local mc=P.Character if not mc then return end
+local mh=mc:FindFirstChild("HumanoidRootPart")local th=plr.Character:FindFirstChild("HumanoidRootPart")local hu=plr.Character:FindFirstChildOfClass("Humanoid")
+if not mh or not th or(hu and hu.Health<=0)then return end
+pcall(function()mh.CFrame=th.CFrame*CFrame.new(0,0,3)ME:FireServer("punch","leftHand")ME:FireServer("punch","rightHand")end)end
+task.spawn(function()while true do if kOn and tgt then local plr=game.Players:FindFirstChild(tgt)if plr then pcall(killP,plr)end end task.wait(0.1)end end)
+task.spawn(function()while true do if aKAll or aKBad or aKGood then for _,plr in ipairs(game.Players:GetPlayers())do if plr~=P then local sk=false if aKAll then sk=true else local k=gK(plr)if k then if aKBad and k<0 then sk=true end if aKGood and k>0 then sk=true end else if aKBad or aKGood then sk=true end end end if sk then pcall(killP,plr)end end end end task.wait(0.1)end end)
+task.spawn(function()while true do if sOn and tgt then local plr=game.Players:FindFirstChild(tgt)if plr and plr.Character then local h=plr.Character:FindFirstChild("Head")if h then workspace.CurrentCamera.CameraSubject=h end end end task.wait(0.2)end end)
+KT:AddSwitch("Kill [Target]",function(s)kOn=s if s and not tgt then game.StarterGui:SetCore("SendNotification",{Title="No Target",Text="Type name first",Duration=3})kOn=false end end):Set(false)
+KT:AddSwitch("Spectate [Target]",function(s)sOn=s if not s then if P.Character and P.Character:FindFirstChild("Head")then workspace.CurrentCamera.CameraSubject=P.Character.Head end end end):Set(false)
+KT:AddSwitch("Auto Kill Everyone",function(s)aKAll=s end):Set(false)
+KT:AddSwitch("Auto Kill Bad",function(s)aKBad=s end):Set(false)
+KT:AddSwitch("Auto Kill Good",function(s)aKGood=s end):Set(false)
+
+-- FAST REBIRTH
+local FRT=W:AddTab("Fast Rebirth")
+local tL=FRT:AddLabel("0d 0h 0m 0s - Inactive")tL.TextSize=17 tL.TextColor3=Color3.fromRGB(255,50,50)
+local pL=FRT:AddLabel("Pace: 0 / Hour")pL.TextSize=17
+local sL=FRT:AddLabel("Rebirths: "..F(RB.Value).." | Gained: 0")sL.TextSize=17
+local stL=FRT:AddLabel("Status: Idle")stL.TextSize=15 stL.TextColor3=Color3.fromRGB(200,200,200)
+FRT:AddLabel("")
+FRT:AddButton("TEST Equip Farm",function()equip(FARM,true,"farm")end)
+FRT:AddButton("TEST Equip Reb",function()equip(REB,true,"reb")end)
+FRT:AddLabel("")
+local rRun=false rStart=0 rTotal=0 rInitRB=RB.Value rLT=tick()rLV=RB.Value rC=0
+local function uL()sL.Text="Rebirths: "..F(RB.Value).." | Gained: "..F(RB.Value-rInitRB)end
+local function cP()rC=rC+1 if rC<2 then rLT=tick()rLV=RB.Value return end local now=tick()local g=RB.Value-rLV if g>0 then local a=(now-rLT)/g local ph=3600/a pL.Text="Pace: "..F(ph).." / Hour"rLT=now rLV=RB.Value end end
+RB:GetPropertyChangedSignal("Value"):Connect(function()cP()uL()end)
+local function doR()
+local c=P.Character if not c then return end
+local h=c:FindFirstChildOfClass("Humanoid")if not h or h.Health<=0 then task.wait(0.5)return end
+stL.Text="Equipping farm pets..."stL.TextColor3=Color3.fromRGB(255,200,100)
+equip(FARM,false,"farm")task.wait(0.3)
+local target=5000+(RB.Value*2550)
+stL.Text="Farming... ("..F(target)..")"stL.TextColor3=Color3.fromRGB(100,200,255)
+local fs=tick()
+while rRun and ST.Value<target do local reps=P.MembershipType==Enum.MembershipType.Premium and 8 or 14 for _=1,reps do ME:FireServer("rep")end task.wait(0.01)if tick()-fs>30 then break end end
+if rRun and ST.Value>=target then
+stL.Text="Equipping rebirth pets..."stL.TextColor3=Color3.fromRGB(200,150,255)
+equip(REB,false,"reb")task.wait(0.3)
+stL.Text="Rebirthing..."stL.TextColor3=Color3.fromRGB(100,255,100)
+local b=RB.Value local rs=tick()
+repeat RS.rEvents.rebirthRemote:InvokeServer("rebirthRequest")task.wait(0.05)if tick()-rs>10 then break end until RB.Value>b or not rRun
+task.wait(1)end end
+local function rL()while rRun do pcall(doR)task.wait(0.1)end stL.Text="Idle"stL.TextColor3=Color3.fromRGB(200,200,200)end
+FRT:AddSwitch("Fast Rebirth",function(s)rRun=s if s then rStart=tick()lastKey=nil task.spawn(rL)else if rStart>0 then rTotal=rTotal+(tick()-rStart)rStart=0 end end end):Set(false)
+task.spawn(function()while true do local now=tick()local e=rTotal if rRun and rStart>0 then e=e+(now-rStart)end local d=math.floor(e/86400)local h=math.floor((e%86400)/3600)local m=math.floor((e%3600)/60)local s=math.floor(e%60)tL.Text=string.format("%dd %dh %dm %ds - %s",d,h,m,s,rRun and "Rebirthing" or "Paused")tL.TextColor3=rRun and Color3.fromRGB(50,255,50)or Color3.fromRGB(255,50,50)task.wait(0.5)end end)
+
+-- FAST FARM
+local FT=W:AddTab("Fast Farm")
+local fT=FT:AddLabel("0d 0h 0m 0s - Inactive")fT.TextSize=17 fT.TextColor3=Color3.fromRGB(255,50,50)
+local fSP=FT:AddLabel("Strength Pace: 0 /Hour")fSP.TextSize=17
+local fDP=FT:AddLabel("Durability Pace: 0 /Hour")fDP.TextSize=17
+local fSL=FT:AddLabel("Strength: 0 | Gained: 0")fSL.TextSize=17
+local fDL=FT:AddLabel("Durability: 0 | Gained: 0")fDL.TextSize=17
+FT:AddLabel("Fast Farm (Recommended: 20-40)").TextSize=20
+local fReps=20 fRun=false fStart=0 fPause=0 fTrack=false fInitS=ST.Value fInitD=DU.Value fSH={}fDH={}
+local function fPing()local s=game:GetService("Stats")local p=s:FindFirstChild("PerformanceStats")and s.PerformanceStats:FindFirstChild("Ping")return p and p:GetValue()or 0 end
+FT:AddTextBox("Rep Speed (20-40)",function(v)local n=tonumber(v)if n and n>0 then fReps=math.floor(n)end end,{placeholder="20"})
+local function fL()while fRun do local s=tick()while tick()-s<0.05 and fRun do for i=1,fReps do if not fRun then break end ME:FireServer("rep")end task.wait(0.01)end while fRun and fPing()>=500 do task.wait(0.1)end end end
+FT:AddSwitch("Fast Rep",function(s)if s and not fRun then fRun=true fStart=tick()fTrack=true fInitS=ST.Value fInitD=DU.Value fSH={}fDH={}task.spawn(fL)elseif not s and fRun then fRun=false if fTrack and fStart>0 then fTrack=false fPause=fPause+(tick()-fStart)fStart=0 end end end):Set(false)
+FT:AddButton("Equip Farm Pets",function()equip(FARM,true,"farm")end)
+FT:AddButton("Equip Rebirth Pets",function()equip(REB,true,"reb")end)
+local function egg()local t=P.Character:FindFirstChild("Protein Egg")or P.Backpack:FindFirstChild("Protein Egg")if t then ME:FireServer("proteinEgg",t)end end
+local eR=false task.spawn(function()while true do if eR then egg()task.wait(1800)else task.wait(1)end end end)
+FT:AddSwitch("Auto Egg",function(s)eR=s if s then egg()end end):Set(false)
+local function shake()local t=P.Character:FindFirstChild("Tropical Shake")or P.Backpack:FindFirstChild("Tropical Shake")if t then ME:FireServer("tropicalShake",t)end end
+local shR=false task.spawn(function()while true do if shR then shake()task.wait(900)else task.wait(1)end end end)
+FT:AddSwitch("Auto Shake",function(s)shR=s if s then shake()end end):Set(false)
+FT:AddButton("Jungle Squat",function()local c=P.Character or P.CharacterAdded:wait()local h=c:WaitForChild("HumanoidRootPart")h.CFrame=CFrame.new(-8371.43359375,6.79806327,2858.88525390)task.wait(0.2)VIM:SendKeyEvent(true,Enum.KeyCode.E,false,game)task.wait(0.05)VIM:SendKeyEvent(false,Enum.KeyCode.E,false,game)end)
+task.spawn(function()
+local lc=tick()
+while true do
+local now=tick()local cs=ST.Value local cd=DU.Value
+fSL.Text="Str: "..F(cs).." | +"..F(cs-fInitS)
+fDL.Text="Dur: "..F(cd).." | +"..F(cd-fInitD)
+if fRun then
+local e=fPause if fStart>0 then e=e+(now-fStart)end
+local d=math.floor(e/86400)local h=math.floor((e%86400)/3600)local m=math.floor((e%3600)/60)local s=math.floor(e%60)
+fT.Text=string.format("%dd %dh %dm %ds - Running",d,h,m,s)fT.TextColor3=Color3.fromRGB(50,255,50)
+table.insert(fSH,{time=now,value=cs})table.insert(fDH,{time=now,value=cd})
+while #fSH>0 and now-fSH[1].time>5 do table.remove(fSH,1)end
+while #fDH>0 and now-fDH[1].time>5 do table.remove(fDH,1)end
+if now-lc>=5 then lc=now
+if #fSH>=2 then local de=fSH[#fSH].value-fSH[1].value local ps=de/5 fSP.Text="Str Pace: "..F(ps*3600).." /Hour"end
+if #fDH>=2 then local de=fDH[#fDH].value-fDH[1].value local ps=de/5 fDP.Text="Dur Pace: "..F(ps*3600).." /Hour"end
+end
+else if not fTrack then fT.Text=string.format("%dd %dh %dm %ds - Stopped",math.floor(fPause/86400),math.floor((fPause%86400)/3600),math.floor((fPause%3600)/60),math.floor(fPause%60))fT.TextColor3=Color3.fromRGB(255,165,0)end end
+task.wait(0.1)
+end end)
+
+-- INFO
+local IT=W:AddTab("Info")
+IT:AddLabel("Made by MLYC_SyazwiOnTop").TextSize=20
+IT:AddLabel("discord.gg/syazwihub").TextSize=20
+IT:AddButton("Copy Invite",function()if setclipboard then setclipboard("https://discord.gg/syazwihub")game.StarterGui:SetCore("SendNotification",{Title="Copied!",Text="Discord link copied",Duration=3})end end)
+local vl=IT:AddLabel("v4.9 PRIVATE")vl.TextSize=40 vl.Font=Enum.Font.Arcade
+print("[SYAZWI] Loaded OK")
