@@ -1,0 +1,90 @@
+-- KEY SYSTEM
+local CG = game:GetService("CoreGui")
+local UI = Instance.new("ScreenGui", CG)
+local F = Instance.new("Frame", UI)
+F.Size = UDim2.new(0,220,0,110) F.Position = UDim2.new(0.5,-110,0.5,-55) F.BackgroundColor3 = Color3.new(0,0,0) F.BorderColor3 = Color3.new(255,0,0) F.BorderSizePixel = 2
+local T = Instance.new("TextBox", F)
+T.Size = UDim2.new(0,180,0,30) T.Position = UDim2.new(0.5,-90,0,15) T.PlaceholderText = "Enter Key..." T.BackgroundColor3 = Color3.new(0.1,0.1,0.1) T.TextColor3 = Color3.new(1,1,1)
+local B = Instance.new("TextButton", F)
+B.Size = UDim2.new(0,100,0,30) B.Position = UDim2.new(0.5,-50,0,60) B.BackgroundColor3 = Color3.new(0.5,0,0) B.TextColor3 = Color3.new(1,1,1) B.Text = "Check"
+
+B.MouseButton1Click:Connect(function()
+    if T.Text == "SIVONTOP" then
+        UI:Destroy()
+        
+        -- SKY AVATAR
+        task.spawn(function()
+            repeat task.wait() until game:IsLoaded() task.wait(1)
+            local char = game.Players.LocalPlayer.Character
+            local bg = char:Clone() bg.Parent = workspace
+            for _, v in pairs(bg:GetDescendants()) do 
+                if v:IsA("BasePart") then v.Size = v.Size * 25 v.Anchored = true v.CanCollide = false end 
+            end
+            local hrp = bg:FindFirstChild("HumanoidRootPart") 
+            if hrp then hrp.CFrame = CFrame.new(0, 300, -2500) end
+        end)
+
+        -- LOAD UI
+        local lib = loadstring(game:HttpGet("https://raw.githubusercontent.com/SadOz8/HonnyMYSON/refs/heads/main/HonnyDezzUi"))()
+        local win = lib:AddWindow("SIV Clan | Private", {main_color = Color3.new(0,0,0)})
+        
+        local p = game.Players.LocalPlayer
+        local me = p:WaitForChild("muscleEvent")
+        local st = p:WaitForChild("leaderstats"):WaitForChild("Strength")
+        local getU = function(str) return str:match("| (%w+)") or str end
+
+        -- TAB FARM
+        local farm = win:AddTab("Farm")
+        local run = false
+        farm:AddSwitch("Fast Strength", function(v)
+            run = v
+            task.spawn(function()
+                while run do
+                    for i=1,6 do me:FireServer("rep") end
+                    task.wait()
+                end
+            end)
+        end)
+
+        -- TAB STATS
+        local stats = win:AddTab("Stats")
+        local target = nil
+        local drop = stats:AddDropdown("Select Player", function(v) target = getU(v) end)
+        for _, plr in pairs(game.Players:GetPlayers()) do drop:Add(plr.DisplayName.." | "..plr.Name) end
+        game.Players.PlayerAdded:Connect(function(plr) drop:Add(plr.DisplayName.." | "..plr.Name) end)
+        
+        local lbl = stats:AddLabel("[None] Strength: N/A")
+        task.spawn(function()
+            while task.wait(0.5) do
+                if target then
+                    local t = game.Players:FindFirstChild(target)
+                    if t and t:FindFirstChild("leaderstats") then
+                        lbl.Text = "["..target.."] Strength: " .. tostring(t.leaderstats.Strength.Value)
+                    else
+                        lbl.Text = "["..target.."] Offline"
+                    end
+                end
+            end
+        end)
+
+        -- TAB KILLS
+        local kills = win:AddTab("Kills")
+        local killT = nil
+        local kDrop = kills:AddDropdown("Select Target", function(v) killT = getU(v) end)
+        for _, plr in pairs(game.Players:GetPlayers()) do if plr ~= p then kDrop:Add(plr.DisplayName.." | "..plr.Name) end end
+        game.Players.PlayerAdded:Connect(function(plr) if plr ~= p then kDrop:Add(plr.DisplayName.." | "..plr.Name) end end)
+        
+        kills:AddSwitch("Auto Kill Target", function(v)
+            task.spawn(function()
+                while v do
+                    local char, t = p.Character, game.Players:FindFirstChild(killT)
+                    if char and t and t.Character and t.Character:FindFirstChild("HumanoidRootPart") then
+                        firetouchinterest(char.RightHand, t.Character.HumanoidRootPart, 0)
+                        firetouchinterest(char.RightHand, t.Character.HumanoidRootPart, 1)
+                    end
+                    task.wait()
+                end
+            end)
+        end)
+    end
+end)
